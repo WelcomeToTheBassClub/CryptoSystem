@@ -46,7 +46,7 @@ namespace CryptoSystem
 
         static public bool CheckNumberPrimality(int countRounds, BigInteger number, int size) //Miller Rabin Test
         {
-            BigInteger s = 0;
+            int s = 0;
             BigInteger t = number - 1;
             while (t % 2 == 0)
             {
@@ -57,20 +57,20 @@ namespace CryptoSystem
             {
                 BigInteger a = GetNumber(size);
                 while (a >= number) a = GetNumber(size);
-
                 var x = BigInteger.ModPow(a, t, number);
                 if (x == 1 || x == number - 1) continue;
+                if (s < 2) return false;
+
                 for (int j = 0; j < s - 1; j++)
                 {
                     x = BigInteger.ModPow(x, 2, number);
                     if (x == 1) return false;
                     if (x == number - 1)
                     {
-                        goto l;
+                        break;
                     }
+                    if (j == s - 2) return false;
                 }
-                return false;
-            l:;
             }
             return true;
         }

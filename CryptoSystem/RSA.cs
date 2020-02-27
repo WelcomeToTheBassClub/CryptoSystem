@@ -57,7 +57,7 @@ namespace CryptoSystem
                 byteList.Add(m[0]);
                 tempByteList.Clear();
 
-                if (i % elementalPart == 0) ProgressNotify?.Invoke();
+                if (elementalPart != 0 && i % elementalPart == 0) ProgressNotify?.Invoke();
             }
 
             File.WriteAllBytes(outputPath, byteList.ToArray());
@@ -106,7 +106,7 @@ namespace CryptoSystem
                 {
                     byteList.Add(0);
                 }
-                if ((i+1) % elementalPart == 0) ProgressNotify?.Invoke();
+                if (elementalPart != 0 && (i+1) % elementalPart == 0) ProgressNotify?.Invoke();
             }
 
             File.WriteAllBytes(outputPath, byteList.ToArray());
