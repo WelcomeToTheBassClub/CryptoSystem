@@ -14,6 +14,7 @@ namespace CryptoSystem
         public event Action ProgressNotify;
 
         private string rsaKeyPath;
+
         public RSA(string userKey) : base(userKey) {}
         public override string KeyPath
         {
@@ -28,39 +29,46 @@ namespace CryptoSystem
 
             var _d = RsaKeyManager.GetPartKey(rsaKeyPath, 0);
             var _n = RsaKeyManager.GetPartKey(rsaKeyPath, 1);
+            
+            int sizePart = GetPartKeyLength(_n);
 
-            var sizePart = GetPartKeyLength(_n);
+            GetIncreasedBytes(ref file, sizePart);
 
-            var byteList = new List<byte>();
-            var tempByteList = new List<byte>();
-
-            int fullSize = file.Length / sizePart;
+            int fullSize = file.Length / (sizePart - 1);
             int elementalPart = fullSize / 100;
 
-            for (int i = 0; i < fullSize; i++)
+
+            DataBlock filePart = new DataBlock(sizePart);
+
+            using (var fStream = new FileStream(outputPath, FileMode.Create))
             {
-                var l = 0;
-                for (int j = sizePart - 1; j >= 0; j--)
+                for (int i = 1; i < file.Length + 1; i++)
                 {
-                    if (file[i * sizePart + j] != 0)
+                    if (i % (sizePart) == 0)
                     {
-                        l = j; 
-                        break;
+                        byte[] tempBytes = new byte[sizePart];
+                        Array.Copy(file, i - sizePart, tempBytes, 0, sizePart);
+                        var secretMessage = new BigInteger(tempBytes);
+                        var decryptedMessage = BigInteger.ModPow(secretMessage, _d, _n).ToByteArray();
+                        GetIncreasedBytes(ref decryptedMessage, sizePart);
+
+                        byte[] resultMessage = new byte[sizePart - 1];
+                        Array.Copy(decryptedMessage, 0, resultMessage, 0, sizePart - 1);
+
+                        if (i == file.Length)
+                        {
+                            byte[] lastResultMessage = new byte[sizePart - GetLastZeroCount(resultMessage)];
+                            Array.Copy(resultMessage, 0, lastResultMessage, 0, lastResultMessage.Length - 1);
+                            fStream.Write(lastResultMessage, 0, lastResultMessage.Length - 1);
+                        }
+                        else
+                        {
+                            fStream.Write(resultMessage, 0, sizePart - 1);
+                        }
+                        if (elementalPart != 0 && (i + 1) % elementalPart == 0) ProgressNotify?.Invoke();
                     }
                 }
-                for (int j = 0; j < l + 1; j++)
-                {
-                    tempByteList.Add(file[i * sizePart + j]);
-                }
-                if (tempByteList[tempByteList.Count - 1] > 127) tempByteList.Add(0);
-                var m = BigInteger.ModPow(new BigInteger(tempByteList.ToArray()), _d, _n).ToByteArray();
-                byteList.Add(m[0]);
-                tempByteList.Clear();
-
-                if (elementalPart != 0 && i % elementalPart == 0) ProgressNotify?.Invoke();
             }
-
-            File.WriteAllBytes(outputPath, byteList.ToArray());
         }
 
         private int GetPartKeyLength(BigInteger keyPart)
@@ -91,25 +99,56 @@ namespace CryptoSystem
             var _e = RsaKeyManager.GetPartKey(rsaKeyPath, 0);
             var _n = RsaKeyManager.GetPartKey(rsaKeyPath, 1);
 
-            var sizePart = GetPartKeyLength(_n);
+            int sizePart = GetPartKeyLength(_n);     
 
-            var byteList = new List<byte>();
-
-            int fullSize = file.Length;
+            GetIncreasedBytes(ref file, sizePart-1);
+            int fullSize = file.Length / (sizePart - 1);
             int elementalPart = fullSize / 100;
 
-            for (int i = 0; i < fullSize; i++)
-            {
-                var c = BigInteger.ModPow(new BigInteger(file[i]), _e, _n).ToByteArray();
-                byteList.AddRange(c);
-                for (int j = 0; j < sizePart - c.Length; j++)
-                {
-                    byteList.Add(0);
-                }
-                if (elementalPart != 0 && (i+1) % elementalPart == 0) ProgressNotify?.Invoke();
-            }
+            DataBlock filePart = new DataBlock(sizePart);
 
-            File.WriteAllBytes(outputPath, byteList.ToArray());
+            using (var fStream = new FileStream(outputPath, FileMode.Create))
+            {
+                for (int i = 1; i < file.Length + 1; i++)
+                {
+                    if (i % (sizePart-1) == 0)
+                    {
+                        byte[] tempBytes = new byte[sizePart - 1];
+                        Array.Copy(file, i - (sizePart - 1), tempBytes, 0, sizePart - 1);
+                        filePart.GetInfoBytes(tempBytes);
+                        var message = filePart.InfoValue;
+                        byte[] encryptedMessage = BigInteger.ModPow(message, _e, _n).ToByteArray();
+                        GetIncreasedBytes(ref encryptedMessage, sizePart);                   
+                        fStream.Write(encryptedMessage, 0, sizePart);
+
+                        if (elementalPart != 0 && (i + 1) % elementalPart == 0) ProgressNotify?.Invoke();
+                    }
+                }
+            }
+        }
+
+
+        private void GetIncreasedBytes(ref byte[] byteArray, int size)
+        {
+            int difference = size - (byteArray.Length % size);
+            
+            if (difference < size)
+            {
+                byte[] tempBytes = new byte[byteArray.Length + difference];
+                Array.Copy(byteArray, tempBytes, byteArray.Length);
+                byteArray = tempBytes;
+            }
+        }
+
+        private int GetLastZeroCount(byte[] bytes)
+        {
+            int count = 0;
+            for (int l = bytes.Length - 1; l > 0; l--)
+            {
+                if (bytes[l] == 0) count++;
+                else break;
+            }
+            return count;
         }
 
         public async void EncryptAsync(string inputPath, string outputPath)

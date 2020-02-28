@@ -79,7 +79,7 @@ namespace CryptoSystem
 
         private void WriteKey(string filePath, KeyType type)
         {
-            using (var fstream = new FileStream(filePath, FileMode.Create))
+            using (var fStream = new FileStream(filePath, FileMode.Create))
             {
                 BigInteger firstNumber = 0;
                 if ((int)type == 0) 
@@ -88,7 +88,7 @@ namespace CryptoSystem
                 }
                 else firstNumber = numberD;
                 var tempKey = CreateKey(firstNumber, numberN);
-                fstream.Write(tempKey, 0, tempKey.Length);
+                fStream.Write(tempKey, 0, tempKey.Length);
             }
         }
 
