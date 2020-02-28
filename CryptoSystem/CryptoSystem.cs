@@ -6,16 +6,21 @@ using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
+    /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/CryptoSystem/*'/>
     abstract class CryptoSystem
     {
         public CryptoSystem(string userKeyPath)
         {
             KeyPath = userKeyPath;
         }
+
+        /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/KeyPath/*'/>
         public abstract string KeyPath { set; }
 
-        public abstract void Decrypt(string input, string output);
+        /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/Decrypt/*'/>
+        public abstract void Decrypt(string inputPath, string outputPath);
 
-        public abstract void Encrypt(string input, string output);
+        /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/Encrypt/*'/>
+        public abstract void Encrypt(string inputPath, string outputPath);
     }
 }

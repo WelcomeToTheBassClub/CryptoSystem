@@ -17,7 +17,7 @@ namespace CryptoSystem
         {
             InitializeComponent();
         }
-
+        
         public string FilePath { get; set; }
         RSA cryptoMachine;
 

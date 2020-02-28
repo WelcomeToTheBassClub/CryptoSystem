@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<docs>
+  <members name="RSA">
+    <RSA>
+      <summary>
+        Класс <с>RSA</с> реализует ассиметричную криптографическую систему с помощью ключей, генерируемых классом <c>
+          <see cref="RsaKeyManager"/>
+        </c>.
+      </summary>
+    </RSA>
+    <RsaNotify>
+      <summary>
+        Необходимо для создания оповещений пользователя извне.
+      </summary>
+    </RsaNotify>
+    <ProgressNotify>
+      <summary>
+        Необходимо для визуального отображения прогресса криптографических преобразований.
+      </summary>
+    </ProgressNotify>
+    <inheritdoc>
+      <Encrypt>
+      </Encrypt>
+      <Decrypt>
+      </Decrypt>
+      <KeyPath>
+      </KeyPath>
+    </inheritdoc> 
+    <EncryptAsync>
+      <summary>
+        Производит криптографическое преобразование файла в асинхронном режиме, расположенного по пути <paramref name="inputPath"/> и сохраняет результат по пути <paramref name="outputPath"/>.
+      </summary>
+      <inheritdoc cref="CryptoSystem.Encrypt">
+      <param name="inputPath">        
+      </param>
+      <param name="outputPath">
+      </param>
+      </inheritdoc>
+    </EncryptAsync>
+    <DecryptAsync>
+      <summary>
+        Производит обратное криптографическое преобразование файла в асинхронном режиме, расположенного по пути <paramref name="inputPath"/> и сохраняет результат по пути <paramref name="outputPath"/>.
+      </summary>
+      <inheritdoc cref="CryptoSystem.Decrypt">
+        <param name="inputPath">
+        </param>
+        <param name="outputPath">
+        </param>
+      </inheritdoc>
+    </DecryptAsync>
+    <GetLastZeroCount>
+      <summary>
+        Определяет сколько нулевых байт расположено в конце массива байт <paramref name="bytes"/>.
+      </summary>
+      <remark>
+        <para>
+          Данный метод полезен, если необходимо избавиться от "лишних" нулей в конце последовательности байт, которые могли возникнуть в ходе криптографического преобразования.
+        </para>
+      </remark>
+      <param name="bytes">
+        Массив байт.
+      </param>
+      <returns>
+        Число "лишних" нулевых байт.
+      </returns>
+    </GetLastZeroCount>
+    <IncreaseByteArray>
+      <summary>
+        Расширяет массив байт <paramref name="byteArray"/> до массива байт размерностью <paramref name="size"/>.
+      </summary>
+      <remark>
+        <para>
+          После возведения в степень по модулю, результат может быть разной размерности, поэтому его необходимо расширять до единого эталона с помощью данного метода.
+        </para>
+      </remark>
+      <param name="byteArray">
+        Массив байт, который необходимо расширить.
+      </param>
+      <param name="size">
+        Размер, до которого нужно расширить массив <paramref name="byteArray"/>.
+      </param>
+    </IncreaseByteArray>
+    <ReadFile>
+      <summary>
+         Считывает последовательность байт из файла, расположенного по адресу <paramref name="filePath"/>.
+      </summary>     
+      <param name="filePath">
+        Путь к файлу, который необходимо считать.
+      </param>
+      <returns>
+        Массив байт.
+      </returns>
+    </ReadFile>
+    <GetPartKeyLength>
+      <summary>
+        Вычисляет размер части криптографического ключа <paramref name="keyPart"/>, представленного числом <see cref="BigInteger"/>.
+      </summary>
+      <remark>
+        <para>
+          Размер блока шифруемой информации как раз задается размером части ключа, например открытой экспоненты, поэтому система всегда сама определяет по сколько байт надо составлять блоки информации для шифрования и расшифрования.
+        </para>
+      </remark>
+      <param name="keyPart">
+        Первая или вторая часть криптографического ключа.
+      </param>
+      <returns>
+        Размер части ключа в байтах.
+      </returns>
+    </GetPartKeyLength>
+
+</members>   
+  <members name="CryptoSystem">
+    <CryptoSystem>
+      <summary>
+        Абстрактный класс, переопределяющий основные функции и параметры, необходимые для реализации криптографической системы.
+      </summary>
+      <remark>
+        <para>Данный класс содержит <c><see cref="Encrypt(string, string)"/></c> и <c><see cref="Decrypt(string, string)"/></c> методы.</para>
+      </remark>
+    </CryptoSystem>
+    <KeyPath>
+      <summary>
+        Описывает полный путь к криптографическому ключу.
+      </summary>
+    </KeyPath>
+    <Encrypt>
+      <summary>
+        Производит криптографическое преобразование файла, расположенного по пути <paramref name="inputPath"/> и сохраняет результат по пути <paramref name="outputPath"/>.
+      </summary>
+      <param name="inputPath">
+        Путь файла, который необходимо зашифровать.
+      </param>
+      <param name="outputPath">
+        Путь по которому необходимо сохранить зашифрованный файл.
+      </param>
+    </Encrypt>
+    <Decrypt>
+      <summary>
+        Производит обратное криптографическое преобразование файла, расположенного по пути <paramref name="inputPath"/> и сохраняет результат по пути <paramref name="outputPath"/>.
+      </summary>
+      <param name="inputPath">
+        Путь файла, который необходимо расшифровать.
+      </param>
+      <param name="outputPath">
+        Путь по которому необходимо сохранить расшифрованный файл.
+      </param>
+    </Decrypt>
+  </members>  
+</docs>
