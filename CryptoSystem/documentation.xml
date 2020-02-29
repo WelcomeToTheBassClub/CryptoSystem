@@ -108,7 +108,7 @@
       </returns>
     </GetPartKeyLength>
 
-</members>   
+  </members>   
   <members name="CryptoSystem">
     <CryptoSystem>
       <summary>
@@ -145,5 +145,202 @@
         Путь по которому необходимо сохранить расшифрованный файл.
       </param>
     </Decrypt>
-  </members>  
+  </members>
+  <members name="DataBlock">
+    <DataBlock>
+      <summary>
+        Класс <с>DataBlock</с> представляет блок информации, которым можно оперировать в криптографической системе.
+      </summary>
+      <remark>
+        <para>Хранит последовательность байт определенного размера, представленного положительным <c><see cref="BigInteger"/></c> числом.</para>
+        <para>Содержит открытый метод <see cref="SetInfoBytes"/> и свойство <see cref="InfoValue"/>.</para>
+      </remark>
+    </DataBlock>
+    <InfoValue>
+      <summary>
+        Хранит представление блока информации в виде положительного <c><see cref="BigInteger"/></c> числа.
+      </summary>
+      <remark>
+        <para>        
+        Любое <see cref="BigInteger"/> число представленное в виде массива байт является положительным, если последний байт имеет значение меньше 128. Поэтому класс <c><see cref="DataBlock"/></c> расширяет массив байт путем добавления нулевого байта в конец последовательности.
+        </para>
+       </remark>
+    </InfoValue>
+    <SetInfoBytes>
+      <summary>
+        Передает массив байт <paramref name="bytes"/> в <c><see cref="DataBlock"/></c> для его представления в виде блока информации.
+      </summary>
+      <param name="bytes">
+        Массив байт.
+      </param>
+    </SetInfoBytes>
+  </members>
+  <members name="MathFunctions">
+    <MathFunctions>
+      <summary>
+        Класс <с>MathFunctions</с> реализует математические алгоритмы, необходимые для генерации ключей шифрования. 
+      </summary>
+      <remark>
+        <para>
+        Содержит метод <c><see cref="GetNumber(int)"/></c> для генерации случайного положительного <c><see cref="BigInteger"/></c> числа, метод <c><see cref="Inverse(BigInteger, BigInteger)"/></c> реализующий расширенный алгоритм Евклида, и метод <c><see cref="CheckNumberPrimality(int, BigInteger, int)"/></c>, реализующий тест на простоту Миллера-Рабина.
+        </para>
+      </remark>
+    </MathFunctions>
+    <GetNumber>
+      <summary>
+        Генерирует случайное положительное <c><see cref="BigInteger"/></c> число размера <paramref name="size"/>.
+      </summary>
+      <param name="size">
+        Размер получаемого числа в байтах.
+      </param>
+      <returns>
+        Положительное <c><see cref="BigInteger"/></c> число.
+      </returns>
+    </GetNumber>
+    <Inverse>
+      <summary>
+        Вычисляет обратное число к <paramref name="a"/> по модулю <paramref name="b"/>.
+      </summary>
+      <remark>
+        <para>
+          Реализует расширенный алгоритм Евклида.
+        </para>
+      </remark>
+      <param name="a">
+        Число, обратное к которому необходимо вычислить.
+      </param>
+      <param name="b">
+        Модуль, по которому необходимо вычислить обратное.
+      </param>
+      <returns>
+        <c><see cref="BigInteger"/></c> число.
+      </returns>
+    </Inverse>
+    <CheckNumberPrimality>
+      <summary>
+        Проверяет на простоту число <paramref name="number"/> размера <paramref name="size"/>.
+      </summary>
+      <remark>
+        <para>
+          Реализует вероятностный тест на простоту Миллера-Рабина.
+        </para>
+      </remark>
+      <param name="roundsCount">
+        Число раундов теста.
+      </param>
+      <param name="number">
+        Проверяемое число.
+      </param>
+      <param name="size">
+        Максимально возможный размер проверяемого числа в байтах.
+      </param>
+      <returns>
+        Возможные результаты тестирования: true - если число простое, false - если число составное.
+      </returns>
+    </CheckNumberPrimality>
+</members>
+  <members name="RsaKeyManager">
+    <RsaKeyManager>
+      <summary>
+        Класс <c>RsaKeyManager</c> содержит функционал для создания и обработки ключей криптографической системы <c><see cref="RSA"/></c>
+      </summary>
+       <remark>
+        <para>
+        Содержит метод <c><see cref="SaveKeys(string, string)"/></c> для сохранения криптографических ключей и <c><see cref="GetRsaKey(string)"/></c> для извлечения значения необходимой части ключа.
+        </para>
+      </remark>
+    </RsaKeyManager>
+    <KMNotify>
+      <summary>
+        Необходимо для создания оповещений пользователя извне.
+      </summary>
+    </KMNotify>
+    <Size>
+      <summary>
+        Полуразмер модуля ключа.
+      </summary>
+    </Size>
+    <numberN>
+      <summary>
+        Содержит значение модуля.
+      </summary>
+    </numberN>
+    <numberE>
+      <summary>
+        Содержит значение открытой экспоненты.
+      </summary>
+    </numberE>
+    <numberD>
+      <summary>
+        Содержит значение закрытой экспоненты.
+      </summary>
+    </numberD>
+    <GetNewParams>
+      <summary>
+        Задает новые значения составляющим ключей.
+      </summary>
+    </GetNewParams>  
+    <SaveKeysAsync>
+      <summary>
+        В асинхронном режиме создает и сохраняет открытый и закрытый криптографические ключи по адресам <paramref name="publicPath"/> и <paramref name="privatePath"/> соответственно
+      </summary>
+      <inheritdoc cref="SaveKeys">
+        <param name="publicPath">
+        </param>
+        <param name="privatePath">
+        </param>
+      </inheritdoc>
+    </SaveKeysAsync>
+    <SaveKeys>
+      <summary>
+        Создает и сохраняет открытый и закрытый криптографические ключи по адресам <paramref name="publicPath"/> и <paramref name="privatePath"/> соответственно 
+      </summary>
+      <param name="publicPath">
+        Путь для записи открытого ключа.
+      </param>
+      <param name="privatePath">
+        Путь для записи закрытого ключа.
+      </param>
+    </SaveKeys>
+    <WriteKey>
+      <summary>
+       Записывает ключ типа <paramref name="type"/> по адресу <paramref name="filePath"/>.
+      </summary>
+      <param name="type">
+        Тип сохраняемого ключа.
+      </param>
+      <param name="filePath">
+        Путь сохраняемого ключа.
+      </param>
+    </WriteKey>
+    <BuildKey>
+      <summary>
+        Преобразует ключ <c><see cref="RsaKey"/></c> в последовательность байт.
+      </summary>
+      <param name="key">
+        Ключ RSA.
+      </param>
+      <returns>
+        Представление ключа RSA в виде последовательности байт.
+      </returns>
+    </BuildKey>
+    <GetRsaKey>
+      <summary>
+        Считывает ключ RSA хранящийся по указанному пути <paramref name="path"/>.
+      </summary>
+      <param name="path">
+        Адрес хранения ключа RSA.
+      </param>
+      <returns>
+        Ключ, представляемый классом <c><see cref="RsaKey"/></c>.
+      </returns>
+    </GetRsaKey>
+  </members>
+  <members name="RsaKey">
+    <RsaKey>
+      <summary>
+        Класс <с>RsaKey</с> представляет криптографический ключ для криптосистемы <c><see cref="RSA"/></c>.
+      </summary>
+    </RsaKey>
+  </members>
 </docs>

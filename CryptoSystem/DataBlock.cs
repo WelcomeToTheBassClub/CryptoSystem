@@ -5,9 +5,12 @@ using System.Numerics;
 
 namespace CryptoSystem
 {
+    /// <include file='documentation.xml' path='docs/members[@name="DataBlock"]/DataBlock/*'/>
     class DataBlock
     {
         private byte[] infoBytes;
+
+        /// <include file='documentation.xml' path='docs/members[@name="DataBlock"]/InfoValue/*'/>
         public BigInteger InfoValue { get; private set; }
 
         private int infoLength;
@@ -20,9 +23,11 @@ namespace CryptoSystem
         }
         public DataBlock(byte[] bytes, int size) : this(size)
         {
-            GetInfoBytes(bytes);
+            SetInfoBytes(bytes);
         }
-        public void GetInfoBytes(byte[] bytes)
+
+        /// <include file='documentation.xml' path='docs/members[@name="DataBlock"]/SetInfoBytes/*'/>
+        public void SetInfoBytes(byte[] bytes)
         {
             Array.Copy(bytes, infoBytes, infoLength - 1);
             CreateValueInfo();

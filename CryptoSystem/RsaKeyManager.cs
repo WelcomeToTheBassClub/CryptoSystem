@@ -13,28 +13,36 @@ namespace CryptoSystem
         Public = 0,
         Private = 1
     }
+
+    /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/RsaKeyManager/*'/>
     class RsaKeyManager
     {
+        #region Key Parameters
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/KMNotify/*'/>
         public event Action<string, string> KMNotify;
-
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/Size/*'/>
         private int Size { get; set; }
-
-        private BigInteger numberN { get; set; }
-        private BigInteger numberE { get; set; }
-        private BigInteger numberD { get; set; }
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberN/*'/>
+        private BigInteger NumberN { get; set; }
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberE/*'/>
+        private BigInteger NumberE { get; set; }
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberD/*'/>
+        private BigInteger NumberD { get; set; }
+        #endregion 
 
         public RsaKeyManager(int size)
         {
             Size = size;
-            numberN = numberD = numberE = 0;
+            NumberN = NumberD = NumberE = 0;
         }
 
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/GetNewParams/*'/>
         private void GetNewParams()
         {
-            numberN = numberD = numberE = 0;
+            NumberN = NumberD = NumberE = 0;
             BigInteger _p = 0;
             BigInteger _q = 0;
-            while (numberN < 256 || _p == _q)
+            while (NumberN < 256 || _p == _q)
             {
                 int count = 0;
                 while (count != 2)
@@ -51,24 +59,24 @@ namespace CryptoSystem
                     }
 
                 }
-                numberN = _p * _q;
+                NumberN = _p * _q;
             }
 
             var funcResult = (_p - 1) * (_q - 1);
+            NumberE = BigInteger.Pow(2, (int)Math.Pow(2, Math.Log(Size, 2))) + 1;
+            NumberD = MathFunctions.Inverse(NumberE, funcResult);
 
-            //(2^2^n)+1 для ключа 32(256=2^8) байт максимальное n=8, для 64 = 9, для 128 = 10 и тд 
-            numberE = BigInteger.Pow(2, (int)Math.Pow(2, Math.Log(Size, 2))) + 1;
-            numberD = MathFunctions.Inverse(numberE, funcResult);
-
-            if ((numberE * numberD) % funcResult != 1) GetNewParams();
+            if ((NumberE * NumberD) % funcResult != 1) GetNewParams();
         }
 
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/SaveKeysAsync/*'/>
         public async void SaveKeysAsync(string publicPath, string privatePath)
         {
             await Task.Run(() => SaveKeys(publicPath, privatePath));
             KMNotify?.Invoke(publicPath, privatePath);
         }
 
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/SaveKeys/*'/>
         public void SaveKeys(string publicPath, string privatePath)
         {
             GetNewParams();
@@ -77,25 +85,28 @@ namespace CryptoSystem
             WriteKey(privatePath, KeyType.Private);           
         }
 
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/WriteKey/*'/>
         private void WriteKey(string filePath, KeyType type)
         {
+            RsaKey key;
             using (var fStream = new FileStream(filePath, FileMode.Create))
             {
                 BigInteger firstNumber = 0;
                 if ((int)type == 0) 
                 {
-                    firstNumber = numberE;
+                    key = new RsaKey(NumberE, NumberN);
                 }
-                else firstNumber = numberD;
-                var tempKey = CreateKey(firstNumber, numberN);
-                fStream.Write(tempKey, 0, tempKey.Length);
+                else key = new RsaKey(NumberD, NumberN);
+                var fileKay = BuildKey(key);
+                fStream.Write(fileKay, 0, fileKay.Length);
             }
         }
 
-        private byte[] CreateKey(BigInteger firstNumber, BigInteger secondNumber)
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/BuildKey/*'/>
+        private byte[] BuildKey(RsaKey key)
         {
-            byte[] buffer1 = firstNumber.ToByteArray();
-            byte[] buffer2 = secondNumber.ToByteArray();
+            byte[] buffer1 = key.FirstPart.ToByteArray();
+            byte[] buffer2 = key.SecondPart.ToByteArray();
 
             int sizePart = 0;
             if ((Math.Log(buffer2.Length, 2) % 1) == 0)
@@ -121,7 +132,8 @@ namespace CryptoSystem
             return result.ToArray();
         }
 
-        static public BigInteger GetPartKey(string path, int part) //получение необходимой части ключа
+        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/GetRsaKey/*'/>
+        static public RsaKey GetRsaKey(string path)
         {
             byte[] file;
             using (FileStream fstream = File.OpenRead(path))
@@ -129,26 +141,36 @@ namespace CryptoSystem
                 file = new byte[fstream.Length];
                 fstream.Read(file, 0, file.Length);
             }
-
             var sizePart = file.Length / 2; //получаем размеры частей ключа
-
-            var byteList = new List<byte>();
             var length = 0;
-
             for (int i = sizePart - 1; i >= 0; i--)  //вычисляем размер части без последних нулей
             {
-                if (file[sizePart * part + i] != 0)
+                if (file[sizePart + i] != 0)
                 {
                     length = i; break;
                 }
             }
-            for (int j = 0; j < length + 1; j++)
-            {
-                byteList.Add(file[sizePart * part + j]); //записываем необходимую часть ключа
-            }
-            if (byteList[byteList.Count - 1] > 127) byteList.Add(0); //добавляем 0, если последний байт "отрицательный"
 
-            return new BigInteger(byteList.ToArray());
+            byte[] firstPartArray;
+            if (file[sizePart + length] > 127)
+            {
+                firstPartArray = new byte[length + 2];
+            }
+            else firstPartArray = new byte[length + 1];
+            Array.Copy(file, 0, firstPartArray, 0, length+1);
+
+            byte[] secondPartArray;
+            if (file[sizePart + length] > 127)
+            {
+                secondPartArray = new byte[length + 2];
+            }
+            else secondPartArray = new byte[length + 1];
+            Array.Copy(file, sizePart, secondPartArray, 0, length+1);
+
+            var firstPart = new BigInteger(firstPartArray);
+            var secondPart = new BigInteger(secondPartArray);
+
+            return new RsaKey(firstPart, secondPart);
         }
     }
 }

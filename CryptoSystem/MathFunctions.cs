@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
+    /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/MathFunctions/*'/>
     static class MathFunctions
     {
         static private Random Randomizer = new Random();
-        static public BigInteger GetNumber(int size)
+
+        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/GetNumber/*'/>
+        public static BigInteger GetNumber(int size)
         {
             byte[] firstPart = new byte[size - 1];
             Randomizer.NextBytes(firstPart);
@@ -18,12 +21,16 @@ namespace CryptoSystem
             byte[] secondPart = new byte[1];
             secondPart[0] = (byte)Randomizer.Next(0, 128);
 
-            var byteList = new List<byte>(firstPart.Concat(secondPart));
-            var number = new BigInteger(byteList.ToArray());
+            byte[] result = new byte[size];
+            Array.Copy(firstPart, result, size - 1);
+            Array.Copy(secondPart, 0, result, firstPart.Length, 1);
+
+            var number = new BigInteger(result);
             return number;
         }
 
-        public static BigInteger Inverse(BigInteger a, BigInteger b) //Euclidean algorithm
+        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/Inverse/*'/>
+        public static BigInteger Inverse(BigInteger a, BigInteger b) 
         {
             BigInteger x, y, x1, x2, y1, y2, q, r;
             BigInteger temp = b;
@@ -44,7 +51,8 @@ namespace CryptoSystem
             return x2;
         }
 
-        static public bool CheckNumberPrimality(int countRounds, BigInteger number, int size) //Miller Rabin Test
+        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/CheckNumberPrimality/*'/>
+        public static bool CheckNumberPrimality(int roundsCount, BigInteger number, int size)
         {
             int s = 0;
             BigInteger t = number - 1;
@@ -53,7 +61,7 @@ namespace CryptoSystem
                 t = t / 2;
                 s++;
             }
-            for (int i = 0; i < countRounds; i++)
+            for (int i = 0; i < roundsCount; i++)
             {
                 BigInteger a = GetNumber(size);
                 while (a >= number) a = GetNumber(size);

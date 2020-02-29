@@ -46,6 +46,13 @@ namespace CryptoSystem
             }
             else return;
 
+            var keyInfo = new FileInfo(publicKeyPath);
+            if (keyInfo.Length > 4096)
+            {
+                MessageBox.Show("Слишком большой размер для криптографического ключа.", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             SaveFileDialog saveDialog = new SaveFileDialog();
             saveDialog.Title = "Укажите путь сохраняемого файла";
             saveDialog.FileName = "secret_" + Path.GetFileName(FilePath);
@@ -138,7 +145,6 @@ namespace CryptoSystem
             }
             keyManager.KMNotify += ShowSaveKeysMessage;
             keyManager.SaveKeysAsync(publicKeyPath, privateKeyPath);
-
         }
 
         private void ShowSaveKeysDialogs(ref string publicKeyPath, ref string privateKeyPath)
@@ -214,6 +220,13 @@ namespace CryptoSystem
                 cryptoMachine = new RSA(privateKeyPath);
             }
             else return;
+
+            var keyInfo = new FileInfo(privateKeyPath);
+            if (keyInfo.Length > 4096)
+            {
+                MessageBox.Show("Слишком большой размер для криптографического ключа.", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }            
 
             SaveFileDialog saveDialog = new SaveFileDialog();
             

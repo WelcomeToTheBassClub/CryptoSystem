@@ -32,8 +32,9 @@ namespace CryptoSystem
         {
             var file = ReadFile(inputPath);
 
-            var _d = RsaKeyManager.GetPartKey(rsaKeyPath, 0);
-            var _n = RsaKeyManager.GetPartKey(rsaKeyPath, 1);
+            RsaKey decryptKey = RsaKeyManager.GetRsaKey(rsaKeyPath);
+            BigInteger _d = decryptKey.FirstPart;
+            BigInteger _n = decryptKey.SecondPart;
 
             int sizePart = GetPartKeyLength(_n);
 
@@ -61,7 +62,7 @@ namespace CryptoSystem
                         Array.Copy(decryptedMessage, 0, resultMessage, 0, sizePart - 1);
 
                         if (i == file.Length)
-                        {                           
+                        {
                             byte[] lastResultMessage = new byte[sizePart - GetLastZeroCount(resultMessage)];
                             Array.Copy(resultMessage, 0, lastResultMessage, 0, lastResultMessage.Length - 1);
                             fStream.Write(lastResultMessage, 0, lastResultMessage.Length - 1);
@@ -104,8 +105,9 @@ namespace CryptoSystem
 
             byte[] file = ReadFile(inputPath);
 
-            var _e = RsaKeyManager.GetPartKey(rsaKeyPath, 0);
-            var _n = RsaKeyManager.GetPartKey(rsaKeyPath, 1);
+            RsaKey encryptKey = RsaKeyManager.GetRsaKey(rsaKeyPath);
+            BigInteger _e = encryptKey.FirstPart;
+            BigInteger _n = encryptKey.SecondPart;
 
             int sizePart = GetPartKeyLength(_n);
 
@@ -123,7 +125,7 @@ namespace CryptoSystem
                     {
                         byte[] tempBytes = new byte[sizePart - 1];
                         Array.Copy(file, i - (sizePart - 1), tempBytes, 0, sizePart - 1);
-                        filePart.GetInfoBytes(tempBytes);
+                        filePart.SetInfoBytes(tempBytes);
                         var message = filePart.InfoValue;
                         byte[] encryptedMessage = BigInteger.ModPow(message, _e, _n).ToByteArray();
                         IncreaseByteArray(ref encryptedMessage, sizePart);
