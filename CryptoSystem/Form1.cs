@@ -1,27 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CryptoSystem
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
+            logBox.ScrollBars = RichTextBoxScrollBars.None;
         }
-        
-        public string FilePath { get; set; }
-        RSA cryptoMachine;
 
-        private void button1_Click(object sender, EventArgs e)
+        private string FilePath { get; set; }
+        private RSA cryptoMachine;
+
+        private void EncryptButton_Click(object sender, EventArgs e)
         {
             string publicKeyPath;
             string outputFilePath;
@@ -32,104 +27,80 @@ namespace CryptoSystem
             }
             catch(FormatException ex) 
             {
-                MessageBox.Show(ex.Message, "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                WriteActionLog("Файл не удалось зашифровать: " + ex.Message, true);
                 return;
-            }        
-
-            OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Title = "Выберите открытый ключ";
-            openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
-            if (openDialog.ShowDialog() == DialogResult.OK)
-            {
-                publicKeyPath = openDialog.FileName;
-                cryptoMachine = new RSA(publicKeyPath);
             }
-            else return;
 
+            using (OpenFileDialog openDialog = new OpenFileDialog())
+            {
+                openDialog.Title = "Выберите открытый ключ";
+                openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    publicKeyPath = openDialog.FileName;
+                    cryptoMachine = new RSA(publicKeyPath);
+                }
+                else 
+                    return;
+            }
+           
             var keyInfo = new FileInfo(publicKeyPath);
             if (keyInfo.Length > 4096)
             {
-                MessageBox.Show("Слишком большой размер для криптографического ключа.", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                WriteActionLog("Выбранный файл скорее всего не являлся ключем.", true);
                 return;
             }
 
-            SaveFileDialog saveDialog = new SaveFileDialog();
-            saveDialog.Title = "Укажите путь сохраняемого файла";
-            saveDialog.FileName = "secret_" + Path.GetFileName(FilePath);
-            if (saveDialog.ShowDialog() == DialogResult.OK)
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
-                outputFilePath = saveDialog.FileName;
+                saveDialog.Title = "Укажите путь сохраняемого файла";
+                saveDialog.FileName = "secret_" + Path.GetFileName(FilePath);
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                    outputFilePath = saveDialog.FileName;
+                else
+                    return;
             }
-            else return;
-
-            cryptoMachine.ProgressNotify += IncProgressEncryption;
+                          
+            progressBar.Value = 0;
+            cryptoMachine.ProgressNotify += IncProgress;
             cryptoMachine.RsaNotify += ShowEncryptMessage;
+            WriteActionLog($"Началось шифрование файла ", Path.GetFileName(FilePath));
             cryptoMachine.EncryptAsync(FilePath, outputFilePath);           
         }
 
-        private void IncProgressEncryption()
+        private void IncProgress(int val)
         {
-            if (progressBar1.Value < 100)
-            {
-                progressBar1.Invoke(new Action(() => progressBar1.Value++));
-            }           
-        }
-        private void IncProgressDecryption()
-        {
-            if (progressBar2.Value < 100)
-            {
-                progressBar2.Invoke(new Action(() => progressBar2.Value++));
-            }           
+            progressBar.Invoke(new Action(() => progressBar.Value = val));          
         }
 
-        private void ShowSaveKeysMessage(string pathPublicKey, string pathPrivateKey)
+        private void ShowEncryptMessage(string outputPath)
         {
-            label2.Visible = linkLabel2.Visible = true;
-            label3.Visible = linkLabel3.Visible = true;
-            linkLabel2.Text = pathPublicKey;
-            linkLabel3.Text = pathPrivateKey;
-
-            MessageBox.Show("Ключи успешно записаны");
+            WriteActionLog($@"Зашифрованный файл сохранен по адресу: {Path.GetDirectoryName(outputPath)}\", Path.GetFileName(outputPath));
+            progressBar.Value = 0;
         }
-        private void ShowEncryptMessage()
+        private void ShowDecryptMessage(string outputPath)
         {
-            MessageBox.Show("Файл успешно зашифрован");
-            progressBar1.Value = 0;
-        }
-        private void ShowDecryptMessage()
-        {
-            MessageBox.Show("Файл успешно расшифрован");
-            progressBar2.Value = 0;
+            WriteActionLog($@"Расшифрованный файл сохранен по адресу: {Path.GetDirectoryName(outputPath)}\", Path.GetFileName(outputPath));
+            progressBar.Value = 0;
         }
 
         private void ChooseFileButton_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Title = "Выберите любой файл";
-            if (openDialog.ShowDialog() == DialogResult.OK)
+            using (OpenFileDialog openDialog = new OpenFileDialog())
             {
-                FilePath = openDialog.FileName;
-                label1.Visible = true;
-                linkLabel1.Visible = true;
-                linkLabel1.Text = openDialog.SafeFileName;
-            }          
+                openDialog.Title = "Выберите любой файл";
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    filePathBox.Text = openDialog.FileName;
+                    FilePath = openDialog.FileName;
+                    WriteActionLog("Выбран файл ", openDialog.SafeFileName);
+                }
+            }               
         }
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void CreateKeysButton_Click(object sender, EventArgs e)
         {
-            try
-            {
-                System.Diagnostics.Process.Start(FilePath);
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }           
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            int sizeKey = int.Parse(textBox1.Text);
+            int sizeKey = int.Parse(keySizeBox.Text);
             RsaKeyManager keyManager = new RsaKeyManager(sizeKey);
 
             string publicKeyPath = "";
@@ -139,64 +110,50 @@ namespace CryptoSystem
             {
                 ShowSaveKeysDialogs(ref publicKeyPath, ref privateKeyPath);              
             }
-            catch(ArgumentNullException ex)
+            catch
             {
+                WriteActionLog("Пути сохранения ключей указаны некорректно.", true);
                 return;
             }
             keyManager.KMNotify += ShowSaveKeysMessage;
             keyManager.SaveKeysAsync(publicKeyPath, privateKeyPath);
         }
+        private void ShowSaveKeysMessage(string publicKeyPath, string privateKeyPath)
+        {
+            var dirPrivateKey = Path.GetDirectoryName(privateKeyPath);
+            var dirPublicKey = Path.GetDirectoryName(publicKeyPath);
+            WriteActionLog($@"Открытый ключ сохранен по адресу {dirPublicKey}\", Path.GetFileName(publicKeyPath));
+            WriteActionLog($@"Закрытый ключ сохранен по адресу {dirPrivateKey}\", Path.GetFileName(privateKeyPath));
+        }
 
         private void ShowSaveKeysDialogs(ref string publicKeyPath, ref string privateKeyPath)
         {
-            SaveFileDialog saveDialog = new SaveFileDialog();
-            saveDialog.FileName = "PublicKey";
-            saveDialog.DefaultExt = "key";
-            saveDialog.Title = "Укажите место для сохранения открытого ключа";
-            if (saveDialog.ShowDialog() == DialogResult.OK)
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
-                publicKeyPath = saveDialog.FileName;
-                saveDialog.FileName = "PrivateKey";
-                saveDialog.Title = "Укажите место для сохранения закрытого ключа";
+                saveDialog.FileName = "PublicKey";
+                saveDialog.DefaultExt = "key";
+                saveDialog.Title = "Укажите место для сохранения открытого ключа";
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
-                    privateKeyPath = saveDialog.FileName;
+                    publicKeyPath = saveDialog.FileName;
+                    saveDialog.FileName = "PrivateKey";
+                    saveDialog.Title = "Укажите место для сохранения закрытого ключа";
+                    if (saveDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        privateKeyPath = saveDialog.FileName;
+                    }
+                    else throw new ArgumentNullException();
                 }
                 else throw new ArgumentNullException();
-            }
-            else throw new ArgumentNullException();
+            }           
         }
        
-        private void trackBar1_Scroll(object sender, EventArgs e)
+        private void keySizeTrackBar_Scroll(object sender, EventArgs e)
         {
-            textBox1.Text = Math.Pow(2,trackBar1.Value).ToString();
+            keySizeBox.Text = Math.Pow(2,keySizeTrackBar.Value).ToString();
         }
 
-        private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start("explorer", Path.GetDirectoryName(linkLabel2.Text));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start("explorer", Path.GetDirectoryName(linkLabel3.Text));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void button3_Click(object sender, EventArgs e)
+        private void DecryptButton_Click(object sender, EventArgs e)
         {
             string privateKeyPath;
             string outputFilePath;
@@ -207,40 +164,74 @@ namespace CryptoSystem
             }
             catch (FormatException ex)
             {
-                MessageBox.Show(ex.Message, "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                WriteActionLog("Файл не удалось расшифровать: " + ex.Message, true);
                 return;
             }
 
-            OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Title = "Выберите закрытый ключ";
-            openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
-            if (openDialog.ShowDialog() == DialogResult.OK)
+            using (OpenFileDialog openDialog = new OpenFileDialog())
             {
-                privateKeyPath = openDialog.FileName;
-                cryptoMachine = new RSA(privateKeyPath);
+                openDialog.Title = "Выберите закрытый ключ";
+                openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    privateKeyPath = openDialog.FileName;
+                    cryptoMachine = new RSA(privateKeyPath);
+                }
+                else 
+                    return;
             }
-            else return;
-
+            
             var keyInfo = new FileInfo(privateKeyPath);
             if (keyInfo.Length > 4096)
             {
-                MessageBox.Show("Слишком большой размер для криптографического ключа.", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                WriteActionLog("Выбранный файл скорее всего не являлся ключем.", true);
                 return;
-            }            
-
-            SaveFileDialog saveDialog = new SaveFileDialog();
-            
-            saveDialog.Title = "Укажите путь сохраняемого файла";
-            saveDialog.FileName = "decrypted_" + Path.GetFileName(FilePath);
-            if (saveDialog.ShowDialog() == DialogResult.OK)
-            {
-                outputFilePath = saveDialog.FileName;
             }
-            else return;
 
-            cryptoMachine.ProgressNotify += IncProgressDecryption;
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Title = "Укажите путь сохраняемого файла";
+                saveDialog.FileName = "decrypted_" + Path.GetFileName(FilePath);
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                    outputFilePath = saveDialog.FileName;
+                else
+                    return;
+            }       
+            
+            progressBar.Value = 0;
+            cryptoMachine.ProgressNotify += IncProgress;
             cryptoMachine.RsaNotify += ShowDecryptMessage;
+            WriteActionLog($"Началась расшифровка файла ", Path.GetFileName(FilePath));
             cryptoMachine.DecryptAsync(FilePath, outputFilePath);
+        }
+
+        private void panelManagerButton_Click(object sender, EventArgs e)
+        {
+            if(keyPanel.Visible == false)
+                keyPanel.Visible = true;
+            else
+                keyPanel.Visible = false;
+        }
+
+        private void WriteActionLog(string message, bool isError)
+        {
+            logBox.SelectionStart = logBox.Text.Length;
+            logBox.SelectionBackColor = logBox.BackColor;
+            logBox.AppendText("\n" + DateTime.Now.ToString()+": ");
+            if(isError)
+                logBox.SelectionBackColor = Color.LightPink;
+            logBox.AppendText(message);
+            logBox.ScrollToCaret();
+        }
+        private void WriteActionLog(string message, string filename)
+        {
+            logBox.SelectionStart = logBox.Text.Length;
+            logBox.SelectionBackColor = logBox.BackColor;
+            var tempstr = $"\n{DateTime.Now}: {message}";
+            logBox.AppendText(tempstr);
+            logBox.SelectionBackColor = Color.PaleTurquoise;
+            logBox.AppendText(filename);
+            logBox.ScrollToCaret();
         }
     }
 }

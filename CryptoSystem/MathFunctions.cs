@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
     /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/MathFunctions/*'/>
-    static class MathFunctions
+    public static class MathFunctions
     {
-        static private Random Randomizer = new Random();
+        private static Random Randomizer = new Random();
 
         /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/GetNumber/*'/>
         public static BigInteger GetNumber(int size)
@@ -47,7 +43,8 @@ namespace CryptoSystem
                 y2 = y1;
                 y1 = y;
             }
-            if (x2 < 0) x2 = temp + x2;
+            if (x2 < 0) 
+                x2 = temp + x2;
             return x2;
         }
 
@@ -64,20 +61,24 @@ namespace CryptoSystem
             for (int i = 0; i < roundsCount; i++)
             {
                 BigInteger a = GetNumber(size);
-                while (a >= number) a = GetNumber(size);
+                while (a >= number)
+                    a = GetNumber(size);
+
                 var x = BigInteger.ModPow(a, t, number);
-                if (x == 1 || x == number - 1) continue;
-                if (s < 2) return false;
+                if (x == 1 || x == number - 1) 
+                    continue;
+                if (s < 2) 
+                    return false;
 
                 for (int j = 0; j < s - 1; j++)
                 {
                     x = BigInteger.ModPow(x, 2, number);
-                    if (x == 1) return false;
+                    if (x == 1) 
+                        return false;
                     if (x == number - 1)
-                    {
                         break;
-                    }
-                    if (j == s - 2) return false;
+                    if (j == s - 2) 
+                        return false;
                 }
             }
             return true;

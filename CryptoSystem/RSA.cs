@@ -1,20 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
     /// <include file='documentation.xml' path='docs/members[@name="RSA"]/RSA/*'/>
-    class RSA : CryptoSystem
+    public class RSA : CryptoSystem
     {
         /// <include file='documentation.xml' path='docs/members[@name="RSA"]/RsaNotify/*'/>
-        public event Action RsaNotify;
+        public event Action<string> RsaNotify;
         /// <include file='documentation.xml' path='docs/members[@name="RSA"]/ProgressNotify/*'/>
-        public event Action ProgressNotify;
+        public event Action<int> ProgressNotify;
 
         private string rsaKeyPath;
 
@@ -27,7 +24,6 @@ namespace CryptoSystem
             }
         }
 
-
         public override void Decrypt(string inputPath, string outputPath)
         {
             var file = ReadFile(inputPath);
@@ -35,32 +31,25 @@ namespace CryptoSystem
             RsaKey decryptKey = RsaKeyManager.GetRsaKey(rsaKeyPath);
             BigInteger _d = decryptKey.FirstPart;
             BigInteger _n = decryptKey.SecondPart;
-
             int sizePart = GetPartKeyLength(_n);
 
             IncreaseByteArray(ref file, sizePart);
+            RunDecrypt(outputPath, file.Length, sizePart, ref file, _d, _n);
+        }
 
-            int fullSize = file.Length / (sizePart - 1);
-            int elementalPart = fullSize / 100;
-
-
-            DataBlock filePart = new DataBlock(sizePart);
-
+        private void RunDecrypt(string outputPath, int fileLength, int sizePart, ref byte[] file, BigInteger _d, BigInteger _n)
+        {
+            double elementalPart = fileLength / sizePart / 100.0;
+            int elemPartCeil = (int)Math.Ceiling(elementalPart);
             using (var fStream = new FileStream(outputPath, FileMode.Create))
-            {
+            {        
+                int blockCount = 0;
                 for (int i = 1; i < file.Length + 1; i++)
-                {
+                {                    
                     if (i % (sizePart) == 0)
                     {
-                        byte[] tempBytes = new byte[sizePart];
-                        Array.Copy(file, i - sizePart, tempBytes, 0, sizePart);
-                        var secretMessage = new BigInteger(tempBytes);
-                        var decryptedMessage = BigInteger.ModPow(secretMessage, _d, _n).ToByteArray();
-                        IncreaseByteArray(ref decryptedMessage, sizePart);
-
-                        byte[] resultMessage = new byte[sizePart - 1];
-                        Array.Copy(decryptedMessage, 0, resultMessage, 0, sizePart - 1);
-
+                        blockCount++;
+                        var resultMessage = GetDecryptFunctionResult(sizePart, ref file, i, _d, _n);
                         if (i == file.Length)
                         {
                             byte[] lastResultMessage = new byte[sizePart - GetLastZeroCount(resultMessage)];
@@ -68,23 +57,51 @@ namespace CryptoSystem
                             fStream.Write(lastResultMessage, 0, lastResultMessage.Length - 1);
                         }
                         else
-                        {
                             fStream.Write(resultMessage, 0, sizePart - 1);
-                        }
-                        if (elementalPart != 0 && (i + 1) % elementalPart == 0) ProgressNotify?.Invoke();
+
+                        IncProgress(blockCount, elementalPart, elemPartCeil);
                     }
                 }
             }
         }
 
+        private byte[] GetDecryptFunctionResult(int sizePart, ref byte[] file, int index, BigInteger d, BigInteger n)
+        {
+            byte[] tempBytes = new byte[sizePart];
+            Array.Copy(file, index - sizePart, tempBytes, 0, sizePart);
+            var secretMessage = new BigInteger(tempBytes);
+            var decryptedMessage = BigInteger.ModPow(secretMessage, d, n).ToByteArray();
+            IncreaseByteArray(ref decryptedMessage, sizePart);
+            byte[] resultMessage = new byte[sizePart - 1];
+            Array.Copy(decryptedMessage, 0, resultMessage, 0, sizePart - 1);
+            return resultMessage;
+        }
+
+        private void IncProgress(int blockCount, double elementalPart, int elemPartCeil)
+        {
+            if (elementalPart < 1)
+            {
+                ProgressNotify?.Invoke((int)(blockCount / elementalPart));
+            }
+            else
+            {
+                if (blockCount % elemPartCeil == 0)
+                {
+                    ProgressNotify?.Invoke(blockCount / elemPartCeil);
+                }
+            }
+        }
 
         /// <include file='documentation.xml' path='docs/members[@name="RSA"]/GetPartKeyLength/*'/>
         private int GetPartKeyLength(BigInteger keyPart)
         {
             int leng = keyPart.ToByteArray().Length;
             var sizePart = 0;
-            if ((Math.Log(leng, 2) % 1) == 0) sizePart = leng;
-            else sizePart = leng + 1;
+
+            if ((Math.Log(leng, 2) % 1) == 0) 
+                sizePart = leng;
+            else 
+                sizePart = leng + 1;
             return sizePart;
         }
 
@@ -102,36 +119,39 @@ namespace CryptoSystem
 
         public override void Encrypt(string inputPath, string outputPath)
         {
-
             byte[] file = ReadFile(inputPath);
 
             RsaKey encryptKey = RsaKeyManager.GetRsaKey(rsaKeyPath);
             BigInteger _e = encryptKey.FirstPart;
             BigInteger _n = encryptKey.SecondPart;
-
             int sizePart = GetPartKeyLength(_n);
 
             IncreaseByteArray(ref file, sizePart - 1);
-            int fullSize = file.Length / (sizePart - 1);
-            int elementalPart = fullSize / 100;
+            RunEncrypt(outputPath, file.Length, sizePart, ref file, _e, _n);
+        }
 
+        private void RunEncrypt(string outputPath, int fileLength, int sizePart, ref byte[] file, BigInteger e, BigInteger n)
+        {
             DataBlock filePart = new DataBlock(sizePart);
+            double elementalPart = fileLength / (sizePart - 1) / 100.0;
+            int elemPartCeil = (int)Math.Ceiling(elementalPart);
 
             using (var fStream = new FileStream(outputPath, FileMode.Create))
             {
+                int blockCount = 0;
                 for (int i = 1; i < file.Length + 1; i++)
                 {
                     if (i % (sizePart - 1) == 0)
                     {
+                        blockCount++;
                         byte[] tempBytes = new byte[sizePart - 1];
                         Array.Copy(file, i - (sizePart - 1), tempBytes, 0, sizePart - 1);
                         filePart.SetInfoBytes(tempBytes);
                         var message = filePart.InfoValue;
-                        byte[] encryptedMessage = BigInteger.ModPow(message, _e, _n).ToByteArray();
+                        byte[] encryptedMessage = BigInteger.ModPow(message, e, n).ToByteArray();
                         IncreaseByteArray(ref encryptedMessage, sizePart);
                         fStream.Write(encryptedMessage, 0, sizePart);
-
-                        if (elementalPart != 0 && (i + 1) % elementalPart == 0) ProgressNotify?.Invoke();
+                        IncProgress(blockCount, elementalPart, elemPartCeil);
                     }
                 }
             }
@@ -156,8 +176,10 @@ namespace CryptoSystem
             int count = 0;
             for (int l = bytes.Length - 1; l > 0; l--)
             {
-                if (bytes[l] == 0) count++;
-                else break;
+                if (bytes[l] == 0)
+                    count++;
+                else
+                        break;
             }
             return count;           
         }
@@ -166,14 +188,14 @@ namespace CryptoSystem
         public async void EncryptAsync(string inputPath, string outputPath)
         {
             await Task.Run(() => Encrypt(inputPath, outputPath));
-            RsaNotify?.Invoke();
+            RsaNotify?.Invoke(outputPath);
         }
 
         /// <include file='documentation.xml' path='docs/members[@name="RSA"]/DecryptAsync/*'/>
         public async void DecryptAsync(string inputPath, string outputPath)
         {
             await Task.Run(() => Decrypt(inputPath, outputPath));
-            RsaNotify?.Invoke();
+            RsaNotify?.Invoke(outputPath);
         }
     }
 }

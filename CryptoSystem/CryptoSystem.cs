@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CryptoSystem
+﻿namespace CryptoSystem
 {
     /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/CryptoSystem/*'/>
-    abstract class CryptoSystem
+    public abstract class CryptoSystem
     {
         public CryptoSystem(string userKeyPath)
         {
             KeyPath = userKeyPath;
-        }
-
+        }      
+        
         /// <include file='documentation.xml' path='docs/members[@name="CryptoSystem"]/KeyPath/*'/>
         public abstract string KeyPath { set; }
 

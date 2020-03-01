@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CryptoSystem
@@ -13,9 +12,14 @@ namespace CryptoSystem
         Public = 0,
         Private = 1
     }
+    enum PartNumber
+    {
+        First = 0,
+        Second = 1
+    }
 
     /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/RsaKeyManager/*'/>
-    class RsaKeyManager
+    public class RsaKeyManager
     {
         #region Key Parameters
         /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/KMNotify/*'/>
@@ -66,7 +70,8 @@ namespace CryptoSystem
             NumberE = BigInteger.Pow(2, (int)Math.Pow(2, Math.Log(Size, 2))) + 1;
             NumberD = MathFunctions.Inverse(NumberE, funcResult);
 
-            if ((NumberE * NumberD) % funcResult != 1) GetNewParams();
+            if ((NumberE * NumberD) % funcResult != 1)
+                GetNewParams();
         }
 
         /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/SaveKeysAsync/*'/>
@@ -92,11 +97,12 @@ namespace CryptoSystem
             using (var fStream = new FileStream(filePath, FileMode.Create))
             {
                 BigInteger firstNumber = 0;
+
                 if ((int)type == 0) 
-                {
                     key = new RsaKey(NumberE, NumberN);
-                }
-                else key = new RsaKey(NumberD, NumberN);
+                else 
+                    key = new RsaKey(NumberD, NumberN);
+
                 var fileKay = BuildKey(key);
                 fStream.Write(fileKay, 0, fileKay.Length);
             }
@@ -110,10 +116,9 @@ namespace CryptoSystem
 
             int sizePart = 0;
             if ((Math.Log(buffer2.Length, 2) % 1) == 0)
-            {
-                sizePart = buffer2.Length;
-            }
-            else sizePart = buffer2.Length + 1;
+                sizePart = buffer2.Length;           
+            else
+                sizePart = buffer2.Length + 1;
 
             var beginList = new List<byte>(buffer1);
             for (int i = 0; i < sizePart - buffer1.Length; i++)
@@ -146,31 +151,30 @@ namespace CryptoSystem
             for (int i = sizePart - 1; i >= 0; i--)  //вычисляем размер части без последних нулей
             {
                 if (file[sizePart + i] != 0)
-                {
-                    length = i; break;
-                }
+                    length = i; 
+                break;             
             }
 
-            byte[] firstPartArray;
-            if (file[sizePart + length] > 127)
-            {
-                firstPartArray = new byte[length + 2];
-            }
-            else firstPartArray = new byte[length + 1];
-            Array.Copy(file, 0, firstPartArray, 0, length+1);
-
-            byte[] secondPartArray;
-            if (file[sizePart + length] > 127)
-            {
-                secondPartArray = new byte[length + 2];
-            }
-            else secondPartArray = new byte[length + 1];
-            Array.Copy(file, sizePart, secondPartArray, 0, length+1);
+            byte[] firstPartArray = GetPartKey(ref file, sizePart, length, PartNumber.First);
+            byte[] secondPartArray = GetPartKey(ref file, sizePart, length, PartNumber.Second); 
 
             var firstPart = new BigInteger(firstPartArray);
             var secondPart = new BigInteger(secondPartArray);
 
             return new RsaKey(firstPart, secondPart);
+        }
+
+        static private byte[] GetPartKey(ref byte[] fileKey, int sizePart, int length, PartNumber partNumber)
+        {
+            byte[] keyPartArray;
+
+            if (fileKey[sizePart + length] > 127)
+                keyPartArray = new byte[length + 2];
+            else
+                keyPartArray = new byte[length + 1];
+
+            Array.Copy(fileKey, sizePart * (int)partNumber, keyPartArray, 0, length + 1);
+            return keyPartArray;
         }
     }
 }
