@@ -8,17 +8,16 @@ namespace CryptoSystem
     public partial class MainForm : Form
     {
         public MainForm()
-        {
+        {           
             InitializeComponent();
             logBox.ScrollBars = RichTextBoxScrollBars.None;
         }
 
         private string FilePath { get; set; }
         private RSA cryptoMachine;
-
+       
         private void EncryptButton_Click(object sender, EventArgs e)
         {
-            string publicKeyPath;
             string outputFilePath;
             try
             {
@@ -31,41 +30,24 @@ namespace CryptoSystem
                 return;
             }
 
-            using (OpenFileDialog openDialog = new OpenFileDialog())
+            if (ShowChooseKeyDialog("Выберите открытый ключ"))
             {
-                openDialog.Title = "Выберите открытый ключ";
-                openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
-                if (openDialog.ShowDialog() == DialogResult.OK)
+                using (SaveFileDialog saveDialog = new SaveFileDialog())
                 {
-                    publicKeyPath = openDialog.FileName;
-                    cryptoMachine = new RSA(publicKeyPath);
+                    saveDialog.Title = "Укажите путь сохраняемого файла";
+                    saveDialog.FileName = "secret_" + Path.GetFileName(FilePath);
+                    if (saveDialog.ShowDialog() == DialogResult.OK)
+                        outputFilePath = saveDialog.FileName;
+                    else
+                        return;
                 }
-                else 
-                    return;
-            }
-           
-            var keyInfo = new FileInfo(publicKeyPath);
-            if (keyInfo.Length > 4096)
-            {
-                WriteActionLog("Выбранный файл скорее всего не являлся ключем.", true);
-                return;
-            }
 
-            using (SaveFileDialog saveDialog = new SaveFileDialog())
-            {
-                saveDialog.Title = "Укажите путь сохраняемого файла";
-                saveDialog.FileName = "secret_" + Path.GetFileName(FilePath);
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                    outputFilePath = saveDialog.FileName;
-                else
-                    return;
-            }
-                          
-            progressBar.Value = 0;
-            cryptoMachine.ProgressNotify += IncProgress;
-            cryptoMachine.RsaNotify += ShowEncryptMessage;
-            WriteActionLog($"Началось шифрование файла ", Path.GetFileName(FilePath));
-            cryptoMachine.EncryptAsync(FilePath, outputFilePath);           
+                progressBar.Value = 0;
+                cryptoMachine.ProgressNotify += IncProgress;
+                cryptoMachine.RsaNotify += ShowEncryptMessage;
+                WriteActionLog($"Началось шифрование файла ", Path.GetFileName(FilePath));
+                cryptoMachine.EncryptAsync(FilePath, outputFilePath);
+            }                
         }
 
         private void IncProgress(int val)
@@ -153,9 +135,32 @@ namespace CryptoSystem
             keySizeBox.Text = Math.Pow(2,keySizeTrackBar.Value).ToString();
         }
 
+        private bool ShowChooseKeyDialog(string dialogTitle)
+        {
+            using (OpenFileDialog openDialog = new OpenFileDialog())
+            {
+                openDialog.Title = dialogTitle;
+                openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    var KeyPath = openDialog.FileName;
+                    cryptoMachine = new RSA(KeyPath);
+
+                    var keyInfo = new FileInfo(KeyPath);
+                    if (keyInfo.Length > 4096)
+                    {
+                        WriteActionLog("Выбранный файл скорее всего не являлся ключем.", true);
+                        return false;
+                    }
+                    return true;
+                }
+                else
+                    return false;   
+            }
+        }
+
         private void DecryptButton_Click(object sender, EventArgs e)
         {
-            string privateKeyPath;
             string outputFilePath;
             try
             {
@@ -168,41 +173,24 @@ namespace CryptoSystem
                 return;
             }
 
-            using (OpenFileDialog openDialog = new OpenFileDialog())
+            if (ShowChooseKeyDialog("Выберите закрытый ключ"))
             {
-                openDialog.Title = "Выберите закрытый ключ";
-                openDialog.Filter = "(*.key)|*.key|All files (*.*)|*.*";
-                if (openDialog.ShowDialog() == DialogResult.OK)
+                using (SaveFileDialog saveDialog = new SaveFileDialog())
                 {
-                    privateKeyPath = openDialog.FileName;
-                    cryptoMachine = new RSA(privateKeyPath);
+                    saveDialog.Title = "Укажите путь сохраняемого файла";
+                    saveDialog.FileName = "decrypted_" + Path.GetFileName(FilePath);
+                    if (saveDialog.ShowDialog() == DialogResult.OK)
+                        outputFilePath = saveDialog.FileName;
+                    else
+                        return;
                 }
-                else 
-                    return;
-            }
-            
-            var keyInfo = new FileInfo(privateKeyPath);
-            if (keyInfo.Length > 4096)
-            {
-                WriteActionLog("Выбранный файл скорее всего не являлся ключем.", true);
-                return;
-            }
 
-            using (SaveFileDialog saveDialog = new SaveFileDialog())
-            {
-                saveDialog.Title = "Укажите путь сохраняемого файла";
-                saveDialog.FileName = "decrypted_" + Path.GetFileName(FilePath);
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                    outputFilePath = saveDialog.FileName;
-                else
-                    return;
-            }       
-            
-            progressBar.Value = 0;
-            cryptoMachine.ProgressNotify += IncProgress;
-            cryptoMachine.RsaNotify += ShowDecryptMessage;
-            WriteActionLog($"Началась расшифровка файла ", Path.GetFileName(FilePath));
-            cryptoMachine.DecryptAsync(FilePath, outputFilePath);
+                progressBar.Value = 0;
+                cryptoMachine.ProgressNotify += IncProgress;
+                cryptoMachine.RsaNotify += ShowDecryptMessage;
+                WriteActionLog($"Началась расшифровка файла ", Path.GetFileName(FilePath));
+                cryptoMachine.DecryptAsync(FilePath, outputFilePath);
+            }           
         }
 
         private void panelManagerButton_Click(object sender, EventArgs e)

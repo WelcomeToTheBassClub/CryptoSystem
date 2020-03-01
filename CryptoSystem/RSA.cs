@@ -5,16 +5,20 @@ using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
-    /// <include file='documentation.xml' path='docs/members[@name="RSA"]/RSA/*'/>
+    /// <summary>
+    /// Класс <с>RSA</с> реализует ассиметричную криптографическую систему с помощью ключей,
+    /// генерируемых классом <c><see cref="RsaKeyManager"/></c>.
+    /// </summary>
     public class RSA : CryptoSystem
     {
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/RsaNotify/*'/>
         public event Action<string> RsaNotify;
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/ProgressNotify/*'/>
         public event Action<int> ProgressNotify;
-
         private string rsaKeyPath;
-
+        
+        /// <summary>
+        /// Конструктор класса <c><see cref="RSA"/></c>, требует полный путь к ключу для объявления.
+        /// </summary>
+        /// <param name="userKey">Полный путь к криптографическому ключу.</param>
         public RSA(string userKey) : base(userKey) { }
         public override string KeyPath
         {
@@ -91,8 +95,7 @@ namespace CryptoSystem
                 }
             }
         }
-
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/GetPartKeyLength/*'/>
+        
         private int GetPartKeyLength(BigInteger keyPart)
         {
             int leng = keyPart.ToByteArray().Length;
@@ -105,7 +108,6 @@ namespace CryptoSystem
             return sizePart;
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/ReadFile/*'/>
         private byte[] ReadFile(string filePath)
         {
             byte[] byteArray;
@@ -157,7 +159,6 @@ namespace CryptoSystem
             }
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/IncreaseByteArray/*'/>
         private void IncreaseByteArray(ref byte[] byteArray, int size)
         {
             int difference = size - (byteArray.Length % size);
@@ -170,7 +171,6 @@ namespace CryptoSystem
             }
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/GetLastZeroCount/*'/>
         private int GetLastZeroCount(byte[] bytes)
         {
             int count = 0;
@@ -184,14 +184,30 @@ namespace CryptoSystem
             return count;           
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/EncryptAsync/*'/>
+        /// <summary>
+        /// Производит криптографическое преобразование файла в асинхронном режиме, 
+        /// расположенного по пути <paramref name="inputPath"/> и сохраняет результат 
+        /// по пути <paramref name="outputPath"/>.
+        /// </summary>
+        /// <inheritdoc cref="Encrypt">
+        /// <param name="inputPath"><inheritdoc/></param>
+        /// <param name="outputPath"><inheritdoc/></param>
+        /// </inheritdoc>
         public async void EncryptAsync(string inputPath, string outputPath)
         {
             await Task.Run(() => Encrypt(inputPath, outputPath));
             RsaNotify?.Invoke(outputPath);
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RSA"]/DecryptAsync/*'/>
+        /// <summary>
+        /// Производит обратное криптографическое преобразование файла в асинхронном режиме, 
+        /// расположенного по пути <paramref name="inputPath"/> и сохраняет результат 
+        /// по пути <paramref name="outputPath"/>.
+        /// </summary>
+        /// <inheritdoc cref="Encrypt">
+        /// <param name="inputPath"><inheritdoc/></param>
+        /// <param name="outputPath"><inheritdoc/></param>
+        /// </inheritdoc>
         public async void DecryptAsync(string inputPath, string outputPath)
         {
             await Task.Run(() => Decrypt(inputPath, outputPath));

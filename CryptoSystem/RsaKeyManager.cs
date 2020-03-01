@@ -7,41 +7,45 @@ using System.Threading.Tasks;
 
 namespace CryptoSystem
 {
-    enum KeyType
+    internal enum KeyType
     {
         Public = 0,
         Private = 1
     }
-    enum PartNumber
+    internal enum PartNumber
     {
         First = 0,
         Second = 1
     }
 
-    /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/RsaKeyManager/*'/>
+    /// <summary>
+    /// Класс <c>RsaKeyManager</c> содержит функционал для создания и обработки ключей 
+    /// криптографической системы <c><see cref="RSA"/></c>.
+    /// </summary>
     public class RsaKeyManager
     {
         #region Key Parameters
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/KMNotify/*'/>
         public event Action<string, string> KMNotify;
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/Size/*'/>
         private int Size { get; set; }
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberN/*'/>
         private BigInteger NumberN { get; set; }
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberE/*'/>
         private BigInteger NumberE { get; set; }
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/numberD/*'/>
         private BigInteger NumberD { get; set; }
-        #endregion 
+        #endregion
 
+        /// <summary>
+        /// Конструктор класса <c><see cref="RsaKeyManager"/></c>, требует размер для объявления.
+        /// </summary>
+        /// <param name="size">Полуразмер части ключа.</param>
         public RsaKeyManager(int size)
         {
             Size = size;
             NumberN = NumberD = NumberE = 0;
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/GetNewParams/*'/>
-        private void GetNewParams()
+        /// <summary>
+        /// Задает новые значения составляющим ключей.
+        /// </summary>
+        private void UpdateKeyParams()
         {
             NumberN = NumberD = NumberE = 0;
             BigInteger _p = 0;
@@ -71,26 +75,34 @@ namespace CryptoSystem
             NumberD = MathFunctions.Inverse(NumberE, funcResult);
 
             if ((NumberE * NumberD) % funcResult != 1)
-                GetNewParams();
+                UpdateKeyParams();
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/SaveKeysAsync/*'/>
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="publicPath"></param>
+        /// <param name="privatePath"></param>
         public async void SaveKeysAsync(string publicPath, string privatePath)
         {
             await Task.Run(() => SaveKeys(publicPath, privatePath));
             KMNotify?.Invoke(publicPath, privatePath);
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/SaveKeys/*'/>
+        /// <summary>
+        /// Создает и сохраняет открытый и закрытый криптографические ключи по 
+        /// адресам <paramref name="publicPath"/> и <paramref name="privatePath"/> соответственно.
+        /// </summary>
+        /// <param name="publicPath">Путь для записи открытого ключа.</param>
+        /// <param name="privatePath">Путь для записи закрытого ключа.</param>
         public void SaveKeys(string publicPath, string privatePath)
         {
-            GetNewParams();
+            UpdateKeyParams();
             
             WriteKey(publicPath, KeyType.Public);
             WriteKey(privatePath, KeyType.Private);           
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/WriteKey/*'/>
         private void WriteKey(string filePath, KeyType type)
         {
             RsaKey key;
@@ -108,7 +120,6 @@ namespace CryptoSystem
             }
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/BuildKey/*'/>
         private byte[] BuildKey(RsaKey key)
         {
             byte[] buffer1 = key.FirstPart.ToByteArray();
@@ -137,7 +148,12 @@ namespace CryptoSystem
             return result.ToArray();
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="RsaKeyManager"]/GetRsaKey/*'/>
+        /// <summary>
+        /// Возвращает ключ в виде экземпляра класса <c><see cref="RsaKey"/></c>, хранящийся
+        /// по пути <paramref name="path"/>.
+        /// </summary>
+        /// <param name="path">Полный путь к ключу.</param>
+        /// <returns>Экземпляр класса <c><see cref="RsaKey"/></c>.</returns>
         static public RsaKey GetRsaKey(string path)
         {
             byte[] file;
@@ -151,8 +167,10 @@ namespace CryptoSystem
             for (int i = sizePart - 1; i >= 0; i--)  //вычисляем размер части без последних нулей
             {
                 if (file[sizePart + i] != 0)
-                    length = i; 
-                break;             
+                {
+                    length = i;
+                    break;
+                }                           
             }
 
             byte[] firstPartArray = GetPartKey(ref file, sizePart, length, PartNumber.First);

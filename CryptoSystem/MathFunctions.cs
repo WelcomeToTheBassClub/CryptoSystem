@@ -3,12 +3,19 @@ using System.Numerics;
 
 namespace CryptoSystem
 {
-    /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/MathFunctions/*'/>
+    /// <summary>
+    /// Класс <с>MathFunctions</с> реализует математические алгоритмы, необходимые 
+    /// для генерации ключей шифрования. 
+    /// </summary>
     public static class MathFunctions
     {
         private static Random Randomizer = new Random();
 
-        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/GetNumber/*'/>
+        /// <summary>
+        /// Генерирует случайное положительное <c><see cref="BigInteger"/></c> число размера <paramref name="size"/>.
+        /// </summary>
+        /// <param name="size">Размер возвращаемого числа в байтах.</param>
+        /// <returns>Положительное <c><see cref="BigInteger"/></c> число.</returns>
         public static BigInteger GetNumber(int size)
         {
             byte[] firstPart = new byte[size - 1];
@@ -25,7 +32,12 @@ namespace CryptoSystem
             return number;
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/Inverse/*'/>
+        /// <summary>
+        /// Возвращает обратное число к <paramref name="a"/> по модулю <paramref name="b"/>.
+        /// </summary>
+        /// <param name="a">Число, обратное к которому необходимо вычислить.</param>
+        /// <param name="b">Модуль, по которому необходимо вычислить обратное.</param>
+        /// <returns><c><see cref="BigInteger"/></c> число.</returns>
         public static BigInteger Inverse(BigInteger a, BigInteger b) 
         {
             BigInteger x, y, x1, x2, y1, y2, q, r;
@@ -48,7 +60,13 @@ namespace CryptoSystem
             return x2;
         }
 
-        /// <include file='documentation.xml' path='docs/members[@name="MathFunctions"]/CheckNumberPrimality/*'/>
+        /// <summary>
+        /// Осуществляет проверку на простоту числа <paramref name="number"/> размера <paramref name="size"/>.
+        /// </summary>
+        /// <param name="roundsCount">Число раундов теста.</param>
+        /// <param name="number">Проверяемое число.</param>
+        /// <param name="size">Максимально возможный размер проверяемого числа в байтах.</param>
+        /// <returns>Возможные результаты проверки: true - число простое, false - число составное.</returns>
         public static bool CheckNumberPrimality(int roundsCount, BigInteger number, int size)
         {
             int s = 0;

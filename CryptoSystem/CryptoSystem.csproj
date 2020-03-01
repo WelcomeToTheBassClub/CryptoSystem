@@ -134,7 +134,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="256icon.ico" />
-    <Content Include="documentation.xml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="resources\" />
